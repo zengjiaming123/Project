@@ -41,7 +41,7 @@ public class SuggestionService {
 
             String action = decideAction(predictUnitPrice, current, yoyGrowth, isRent);
             String unitLabel = isRent ? "万/㎡/月" : "万/㎡";
-            String totalLabel = isRent ? "预测月租" : "预测总价";
+            String totalLabel = isRent ? "预测租金" : "预测总价";
 
             return String.format(
                     "%d年%d月【%s】本房源在%s%s为%.2f万，单位价格%.2f%s。数据库%s同月均价%.2f%s（样本%d条），较%d年同期%s%.1f%%。%s",
@@ -61,7 +61,7 @@ public class SuggestionService {
 
     private String baseLine(int year, int month, String district, String typeLabel, boolean isRent, double total, double unit) {
         if (isRent) {
-            return String.format("%d年%d月【%s】本房源在%s预测月租%.2f万，单位月租%.2f万/㎡/月。", year, month, typeLabel, district, total, unit);
+            return String.format("%d年%d月【%s】本房源在%s预测租金%.2f万，单位月租%.2f万/㎡/月。", year, month, typeLabel, district, total, unit);
         }
         return String.format("%d年%d月【%s】本房源在%s预测总价%.2f万，单位价格%.2f万/㎡。", year, month, typeLabel, district, total, unit);
     }
