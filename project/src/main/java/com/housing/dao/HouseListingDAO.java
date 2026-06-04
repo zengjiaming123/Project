@@ -1,6 +1,8 @@
 package com.housing.dao;
 
 import com.housing.model.HouseListing;
+import com.housing.model.MarketStats;
+import com.housing.util.ListingTypeUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,57 +26,110 @@ public class HouseListingDAO {
         if (floor != null) { sql.append(" AND floor = ?"); params.add(floor); }
         if (distanceToSubway != null) { sql.append(" AND distance_to_subway <= ?"); params.add(distanceToSubway); }
         if (houseAge != null) { sql.append(" AND house_age <= ?"); params.add(houseAge); }
-        if (listingType != null && !listingType.isEmpty()) { sql.append(" AND listing_type = ?"); params.add(listingType); }
+        appendListingType(sql, params, listingType);
 
         sql.append(" ORDER BY year DESC, month DESC, price ASC LIMIT 120");
 
         try (Connection conn = DBUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-            for (int i = 0; i < params.size(); i++) {
-                ps.setObject(i + 1, params.get(i));
-            }
+            setParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    HouseListing item = new HouseListing();
-                    item.setDistrict(rs.getString("district"));
-                    item.setYear(rs.getInt("year"));
-                    item.setMonth(rs.getInt("month"));
-                    item.setPrice(rs.getDouble("price"));
-                    item.setArea(rs.getDouble("area"));
-                    item.setFloor(rs.getInt("floor"));
-                    item.setHouseAge(rs.getDouble("house_age"));
-                    item.setDistanceToSubway(rs.getDouble("distance_to_subway"));
-                    item.setListingType(rs.getString("listing_type"));
-                    results.add(item);
-                }
+                while (rs.next()) results.add(mapRow(rs));
             }
         }
         return results;
     }
 
-    public List<double[]> trendByYear(String district) throws Exception {
-        String sql = "SELECT year, AVG(price / area) avg_price FROM house_listings WHERE district = ? GROUP BY year ORDER BY year";
-        return queryTrend(sql, district);
+    public List<double[]> trendByYear(String district, String listingType) throws Exception {
+        StringBuilder sql = new StringBuilder(
+                "SELECT year, AVG(price / area) avg_price FROM house_listings WHERE district = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(district);
+        appendListingType(sql, params, listingType);
+        sql.append(" GROUP BY year ORDER BY year");
+        return queryTrend(sql.toString(), params);
     }
 
-    public List<double[]> trendByMonth(String district, int year) throws Exception {
-        String sql = "SELECT month, AVG(price / area) avg_price FROM house_listings WHERE district = ? AND year = ? GROUP BY month ORDER BY month";
-        return queryTrend(sql, district, year);
+    public List<double[]> trendByMonth(String district, int year, String listingType) throws Exception {
+        StringBuilder sql = new StringBuilder(
+                "SELECT month, AVG(price / area) avg_price FROM house_listings WHERE district = ? AND year = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(district);
+        params.add(year);
+        appendListingType(sql, params, listingType);
+        sql.append(" GROUP BY month ORDER BY month");
+        return queryTrend(sql.toString(), params);
     }
 
-    private List<double[]> queryTrend(String sql, Object... params) throws Exception {
-        List<double[]> points = new ArrayList<>();
+    public MarketStats getMarketStats(String district, int year, int month, double area, String listingType) throws Exception {
+        String type = ListingTypeUtil.normalize(listingType);
+        if (type == null) throw new IllegalArgumentException("listingType 无效");
+
+        MarketStats stats = new MarketStats();
+        StringBuilder sql = new StringBuilder(
+                "SELECT AVG(price / area) AS avg_unit, AVG(price) AS avg_total, COUNT(*) AS cnt " +
+                "FROM house_listings WHERE district = ? AND year = ? AND month = ? AND area > 0 AND listing_type = ?");
+        List<Object> params = new ArrayList<>();
+        params.add(district);
+        params.add(year);
+        params.add(month);
+        params.add(type);
+
+        if (area > 0) {
+            sql.append(" AND area BETWEEN ? AND ?");
+            params.add(area * 0.85);
+            params.add(area * 1.15);
+        }
+
         try (Connection conn = DBUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (int i = 0; i < params.length; i++) {
-                ps.setObject(i + 1, params[i]);
-            }
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            setParams(ps, params);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    points.add(new double[]{rs.getDouble(1), rs.getDouble(2)});
+                if (rs.next()) {
+                    stats.setAvgUnitPrice(rs.getDouble("avg_unit"));
+                    stats.setAvgTotalPrice(rs.getDouble("avg_total"));
+                    stats.setSampleCount(rs.getInt("cnt"));
                 }
             }
         }
+        return stats;
+    }
+
+    private void appendListingType(StringBuilder sql, List<Object> params, String listingType) {
+        String type = ListingTypeUtil.normalize(listingType);
+        if (type != null) {
+            sql.append(" AND listing_type = ?");
+            params.add(type);
+        }
+    }
+
+    private HouseListing mapRow(ResultSet rs) throws Exception {
+        HouseListing item = new HouseListing();
+        item.setDistrict(rs.getString("district"));
+        item.setYear(rs.getInt("year"));
+        item.setMonth(rs.getInt("month"));
+        item.setPrice(rs.getDouble("price"));
+        item.setArea(rs.getDouble("area"));
+        item.setFloor(rs.getInt("floor"));
+        item.setHouseAge(rs.getDouble("house_age"));
+        item.setDistanceToSubway(rs.getDouble("distance_to_subway"));
+        item.setListingType(rs.getString("listing_type"));
+        return item;
+    }
+
+    private List<double[]> queryTrend(String sql, List<Object> params) throws Exception {
+        List<double[]> points = new ArrayList<>();
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            setParams(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) points.add(new double[]{rs.getDouble(1), rs.getDouble(2)});
+            }
+        }
         return points;
+    }
+
+    private void setParams(PreparedStatement ps, List<Object> params) throws Exception {
+        for (int i = 0; i < params.size(); i++) ps.setObject(i + 1, params.get(i));
     }
 }

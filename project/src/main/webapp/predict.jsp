@@ -17,6 +17,7 @@
     <div class="layout-2col">
         <div class="left-panel">
             <h3>7项特征预测房价</h3>
+            <p class="hint" id="modeHint">当前模式：未选择（请回首页选租房/购房）</p>
 
             <!-- 关闭浏览器自动填充，确保用户手动输入 -->
             <form id="predictForm" autocomplete="off" onsubmit="return false;">
@@ -42,6 +43,12 @@
 <script src="assets/js/app.js"></script>
 <script>
     renderDistrictOptions("district", false);
+    (function showMode() {
+        const t = sessionStorage.getItem("listingType");
+        const el = document.getElementById("modeHint");
+        if (!t) { el.innerText = "当前模式：未选择（请回首页选租房/购房）"; return; }
+        el.innerText = t === "rent" ? "当前模式：租房（仅使用 rent 数据）" : "当前模式：购房（仅使用 sale 数据）";
+    })();
 
     function getVal(id) {
         const el = document.getElementById(id);
@@ -77,10 +84,13 @@
 
     async function doPredict() {
         if (!validateForm()) return;
+        const lt = sessionStorage.getItem("listingType");
+        if (!lt) { alert("请返回首页先选择【租房】或【购房】"); return; }
 
         const form = new URLSearchParams();
         ["district","year","month","area","floor","distanceToSubway","houseAge"]
             .forEach(k => form.append(k, getVal(k)));
+        form.append("listingType", sessionStorage.getItem("listingType") || "");
 
         try {
             const res = await fetch("api/predict", { method: "POST", body: form });
@@ -94,11 +104,13 @@
 
             drawScatter();
 
+            const totalLabel = data.listingType === "rent" ? "预测月租(万)" : "预测总价(万)";
+            const unitLabel = data.unitLabel || "万/㎡";
             document.getElementById("impactTable").innerHTML =
                 "<tr><th>影响因子</th><th>影响幅度(%)</th></tr>" +
                 data.impact.map(x => `<tr><td>${x.name}</td><td>${x.value}</td></tr>`).join("") +
-                `<tr><td>预测总价(万)</td><td>${data.totalPrice}</td></tr>` +
-                `<tr><td>单位价格(万/平)</td><td>${data.unitPrice}</td></tr>`;
+                `<tr><td>${totalLabel}</td><td>${data.totalPrice}</td></tr>` +
+                `<tr><td>单位价格(${unitLabel})</td><td>${data.unitPrice}</td></tr>`;
 
             document.getElementById("suggestion").innerText = data.suggestion;
         } catch (e) {

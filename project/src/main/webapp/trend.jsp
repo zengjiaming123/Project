@@ -21,7 +21,8 @@
             <div class="form-row"><label>年份（可选）</label><input id="year" type="number" placeholder="不填则按年份绘图"></div>
             <button class="btn" style="width:100%" onclick="drawTrend()">查看</button>
             <p class="hint">仅选择地区：显示均价-年份；地区+年份：显示均价-月份（1~12月全部显示）。</p>
-            <p class="hint">单位：万/㎡（按 price/area 计算）。</p>
+            <p class="hint" id="trendModeHint">当前模式：未选择</p>
+            <p class="hint">售房单位：万/㎡；租房单位：万/㎡/月（按 price/area，且仅统计同类型数据）。</p>
         </div>
 
         <div class="right-panel">
@@ -33,17 +34,28 @@
 <script src="assets/js/app.js"></script>
 <script>
     renderDistrictOptions("district", true);
+    (function () {
+        const t = sessionStorage.getItem("listingType");
+        const el = document.getElementById("trendModeHint");
+        if (!t) { el.innerText = "当前模式：未选择（请回首页）"; return; }
+        el.innerText = t === "rent" ? "当前模式：租房走势" : "当前模式：购房走势";
+    })();
 
     async function drawTrend() {
         const district = document.getElementById("district").value;
         const year = document.getElementById("year").value.trim();
+        const listingType = sessionStorage.getItem("listingType") || "";
         if (!district) {
             alert("地区必选");
             return;
         }
+        if (!listingType) {
+            alert("请返回首页先选择【租房】或【购房】");
+            return;
+        }
 
         try {
-            const qs = new URLSearchParams({ district });
+            const qs = new URLSearchParams({ district, listingType });
             if (year) qs.append("year", year);
 
             const res = await fetch("api/trend?" + qs.toString());

@@ -1,6 +1,8 @@
 package com.housing.servlet;
 
 import com.housing.service.PredictionService;
+import com.housing.service.SuggestionService;
+import com.housing.util.ListingTypeUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -10,13 +12,20 @@ import java.io.IOException;
 import java.util.Map;
 
 public class PredictServlet extends HttpServlet {
-    private final PredictionService service = new PredictionService();
+    private final PredictionService predictionService = new PredictionService();
+    private final SuggestionService suggestionService = new SuggestionService();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         resp.setContentType("application/json;charset=UTF-8");
         try {
+            String listingType = ListingTypeUtil.normalize(req.getParameter("listingType"));
+            if (listingType == null) {
+                resp.getWriter().write("{\"success\":false,\"message\":\"请先在首页选择【租房】或【购房】\"}");
+                return;
+            }
+
             String district = req.getParameter("district");
             int year = Integer.parseInt(req.getParameter("year"));
             int month = Integer.parseInt(req.getParameter("month"));
@@ -25,15 +34,23 @@ public class PredictServlet extends HttpServlet {
             double distance = Double.parseDouble(req.getParameter("distanceToSubway"));
             double age = Double.parseDouble(req.getParameter("houseAge"));
 
-            double unitPrice = service.predictUnitPrice(district, year, month, area, floor, distance, age);
+            double unitPrice = predictionService.predictUnitPrice(
+                    district, year, month, area, floor, distance, age, listingType);
             double totalPrice = unitPrice * area;
-            Map<String, Double> impact = service.factorImpact(area, floor, distance, age);
-            String suggestion = buildSuggestion(district, year, month, totalPrice, unitPrice);
+
+            Map<String, Double> impact = predictionService.factorImpact(area, floor, distance, age);
+            String suggestion = suggestionService.buildDataDrivenSuggestion(
+                    district, year, month, area, unitPrice, totalPrice, listingType);
+
+            String unitLabel = ListingTypeUtil.isRent(listingType) ? "万/㎡/月" : "万/㎡";
 
             StringBuilder sb = new StringBuilder("{\"success\":true,");
+            sb.append("\"listingType\":\"").append(listingType).append("\",");
+            sb.append("\"listingTypeLabel\":\"").append(ListingTypeUtil.label(listingType)).append("\",");
             sb.append("\"unitPrice\":").append(String.format("%.2f", unitPrice)).append(",");
+            sb.append("\"unitLabel\":\"").append(unitLabel).append("\",");
             sb.append("\"totalPrice\":").append(String.format("%.2f", totalPrice)).append(",");
-            sb.append("\"suggestion\":\"").append(suggestion).append("\",");
+            sb.append("\"suggestion\":\"").append(escapeJson(suggestion)).append("\",");
             sb.append("\"impact\":[");
             int idx = 0;
             for (Map.Entry<String, Double> en : impact.entrySet()) {
@@ -48,12 +65,7 @@ public class PredictServlet extends HttpServlet {
         }
     }
 
-    private String buildSuggestion(String district, int year, int month, double totalPrice, double unitPrice) {
-        if (year == 2023) {
-            return "2023年基准年暂不提供同比建议。";
-        }
-        double growth = 1.2 + (month % 3) * 0.4;
-        return String.format("%d年%d月本房源在%s预测市场价为%.2f万，单位价格为%.2f万，较%d年同期增长%.1f%%，建议尽快挂牌。",
-                year, month, district, totalPrice, unitPrice, year - 1, growth);
+    private String escapeJson(String s) {
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
