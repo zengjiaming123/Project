@@ -15,6 +15,7 @@ body {
 }
 .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(47,115,255,.2); }
 .btn.secondary { background: #fff; color: #2f73ff; border: 1px solid #b8d2ff; }
+.btn.secondary.active { background: #2f73ff; color: #fff; border-color: #2f73ff; }
 
 .center-panel {
     margin: 50px auto 28px; max-width: 1000px; background: #fff;

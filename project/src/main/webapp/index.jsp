@@ -16,8 +16,8 @@
         <h2>房产信息服务平台</h2>
         <p class="hint">先选择业务方向，再选择身份，最后进入功能页。</p>
         <div class="choice-row">
-            <button class="btn secondary" onclick="setMode('rent')">租房</button>
-            <button class="btn secondary" onclick="setMode('buy')">购房</button>
+            <button class="btn secondary" id="modeRent" onclick="setMode('rent')">租房</button>
+            <button class="btn secondary" id="modeBuy" onclick="setMode('buy')">购房</button>
         </div>
         <div class="role-grid">
             <div class="card" id="roleA" onclick="setRole('A')">租客 / 买方</div>
@@ -37,7 +37,11 @@
     let selectedMode = "";
     let selectedRole = "";
     setNewsTicker("newsLine");
-    function setMode(v) { selectedMode = v; }
+    function setMode(v) {
+        selectedMode = v;
+        document.getElementById("modeRent").classList.toggle("active", v === "rent");
+        document.getElementById("modeBuy").classList.toggle("active", v === "buy");
+    }
     function setRole(v) {
         selectedRole = v;
         document.getElementById("roleA").classList.toggle("active", v === "A");
