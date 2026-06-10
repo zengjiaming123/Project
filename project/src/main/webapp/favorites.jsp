@@ -9,7 +9,7 @@
 <body>
 <div class="page">
     <div class="top-bar">
-        <button class="btn secondary" onclick="location.href='index.jsp'">返回首页</button>
+        <button class="btn secondary" onclick="location.href='index.jsp'">首页</button>
     </div>
     <div class="center-panel">
         <h2>用户收藏</h2>

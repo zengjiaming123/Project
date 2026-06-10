@@ -9,6 +9,7 @@
 <body>
 <div class="page">
     <div class="top-bar">
+        <button class="btn secondary" onclick="location.href='index.jsp'">首页</button>
         <button class="btn secondary" onclick="location.href='search.jsp'">房源搜索</button>
         <button class="btn secondary" onclick="location.href='trend.jsp'">价格走势图</button>
         <button class="btn secondary" onclick="location.reload()">重试</button>
