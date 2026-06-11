@@ -1,5 +1,8 @@
 package com.housing.servlet;
 
+import com.housing.dao.HouseListingDAO;
+import com.housing.model.HouseListing;
+import com.housing.model.LinearRegressionModel;
 import com.housing.service.PredictionService;
 import com.housing.service.SuggestionService;
 import com.housing.util.ListingTypeUtil;
@@ -9,11 +12,13 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 public class PredictServlet extends HttpServlet {
     private final PredictionService predictionService = new PredictionService();
     private final SuggestionService suggestionService = new SuggestionService();
+    private final HouseListingDAO listingDAO = new HouseListingDAO();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -38,10 +43,15 @@ public class PredictServlet extends HttpServlet {
                     district, year, month, area, floor, distance, age, listingType);
             double totalPrice = unitPrice * area;
 
-            Map<String, Double> impact = predictionService.factorImpact(area, floor, distance, age);
+            Map<String, Double> impact = predictionService.factorImpact(
+                    district, year, month, area, floor, distance, age, listingType);
             String suggestion = suggestionService.buildDataDrivenSuggestion(
                     district, year, month, area, unitPrice, totalPrice, listingType);
 
+            LinearRegressionModel model = predictionService.getModel(listingType);
+            Map<String, List<double[]>> fitLines = predictionService.getFitLines(
+                    district, year, month, area, floor, distance, age, listingType);
+            List<HouseListing> scatterSamples = listingDAO.fetchScatterSamples(listingType, 200);
             String unitLabel = ListingTypeUtil.isRent(listingType) ? "万/㎡/月" : "万/㎡";
 
             StringBuilder sb = new StringBuilder("{\"success\":true,");
@@ -50,6 +60,12 @@ public class PredictServlet extends HttpServlet {
             sb.append("\"unitPrice\":").append(String.format("%.2f", unitPrice)).append(",");
             sb.append("\"unitLabel\":\"").append(unitLabel).append("\",");
             sb.append("\"totalPrice\":").append(String.format("%.2f", totalPrice)).append(",");
+            sb.append("\"rSquared\":").append(String.format("%.4f", model.getRSquared())).append(",");
+            sb.append("\"trainSampleCount\":").append(model.getSampleCount()).append(",");
+            sb.append("\"modelType\":\"多元线性回归(OLS)\",");
+            sb.append("\"fitLines\":").append(serializeFitLines(fitLines)).append(",");
+            sb.append("\"scatterPoints\":").append(serializeScatterPoints(scatterSamples)).append(",");
+            sb.append("\"scatterCount\":").append(scatterSamples.size()).append(",");
             sb.append("\"suggestion\":\"").append(escapeJson(suggestion)).append("\",");
             sb.append("\"impact\":[");
             int idx = 0;
@@ -61,8 +77,44 @@ public class PredictServlet extends HttpServlet {
             sb.append("]}");
             resp.getWriter().write(sb.toString());
         } catch (Exception e) {
-            resp.getWriter().write("{\"success\":false,\"message\":\"预测失败，请检查输入\"}");
+            e.printStackTrace();
+            resp.getWriter().write("{\"success\":false,\"message\":\"预测失败，请检查输入或数据库连接\"}");
         }
+    }
+
+    private String serializeScatterPoints(List<HouseListing> samples) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < samples.size(); i++) {
+            HouseListing item = samples.get(i);
+            if (i > 0) sb.append(",");
+            sb.append("{")
+                    .append("\"area\":").append(item.getArea()).append(",")
+                    .append("\"floor\":").append(item.getFloor()).append(",")
+                    .append("\"distance\":").append(item.getDistanceToSubway()).append(",")
+                    .append("\"age\":").append(item.getHouseAge()).append(",")
+                    .append("\"price\":").append(item.getPrice())
+                    .append("}");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private String serializeFitLines(Map<String, List<double[]>> fitLines) {
+        StringBuilder sb = new StringBuilder("{");
+        int keyIdx = 0;
+        for (Map.Entry<String, List<double[]>> entry : fitLines.entrySet()) {
+            if (keyIdx++ > 0) sb.append(",");
+            sb.append("\"").append(entry.getKey()).append("\":[");
+            List<double[]> points = entry.getValue();
+            for (int i = 0; i < points.size(); i++) {
+                if (i > 0) sb.append(",");
+                sb.append("{\"x\":").append(String.format("%.4f", points.get(i)[0]))
+                        .append(",\"y\":").append(String.format("%.2f", points.get(i)[1])).append("}");
+            }
+            sb.append("]");
+        }
+        sb.append("}");
+        return sb.toString();
     }
 
     private String escapeJson(String s) {

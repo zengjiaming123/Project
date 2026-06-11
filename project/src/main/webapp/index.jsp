@@ -31,12 +31,12 @@
     </div>
 </div>
 
-<div class="news-ticker"><span id="newsLine"></span></div>
+<div class="news-ticker" id="newsTicker"></div>
 <script src="assets/js/app.js"></script>
 <script>
     let selectedMode = "";
     let selectedRole = "";
-    setNewsTicker("newsLine");
+    setNewsTicker("newsTicker");
     function setMode(v) {
         selectedMode = v;
         document.getElementById("modeRent").classList.toggle("active", v === "rent");

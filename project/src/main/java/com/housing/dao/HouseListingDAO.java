@@ -61,6 +61,43 @@ public class HouseListingDAO {
         return queryTrend(sql.toString(), params);
     }
 
+    public List<HouseListing> fetchTrainingData(String listingType) throws Exception {
+        String type = ListingTypeUtil.normalize(listingType);
+        if (type == null) throw new IllegalArgumentException("listingType 无效");
+
+        List<HouseListing> results = new ArrayList<>();
+        String sql = "SELECT district, year, month, price, area, floor, house_age, distance_to_subway, listing_type " +
+                "FROM house_listings WHERE listing_type = ? AND area > 0 AND price > 0 ORDER BY id";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, type);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) results.add(mapRow(rs));
+            }
+        }
+        return results;
+    }
+
+    public List<HouseListing> fetchScatterSamples(String listingType, int limit) throws Exception {
+        String type = ListingTypeUtil.normalize(listingType);
+        if (type == null) throw new IllegalArgumentException("listingType 无效");
+
+        List<HouseListing> results = new ArrayList<>();
+        String sql = "SELECT district, year, month, price, area, floor, house_age, distance_to_subway, listing_type " +
+                "FROM house_listings WHERE listing_type = ? AND area > 0 AND price > 0 ORDER BY RAND() LIMIT ?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, type);
+            ps.setInt(2, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) results.add(mapRow(rs));
+            }
+        }
+        return results;
+    }
+
     public MarketStats getMarketStats(String district, int year, int month, double area, String listingType) throws Exception {
         String type = ListingTypeUtil.normalize(listingType);
         if (type == null) throw new IllegalArgumentException("listingType 无效");
