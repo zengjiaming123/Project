@@ -42,6 +42,15 @@
         <url-pattern>/api/scatter</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+        <servlet-name>NewsServlet</servlet-name>
+        <servlet-class>com.housing.servlet.NewsServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>NewsServlet</servlet-name>
+        <url-pattern>/api/news</url-pattern>
+    </servlet-mapping>
+
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>

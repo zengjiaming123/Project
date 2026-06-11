@@ -98,7 +98,7 @@
         }
 
         if (xTicks.length === 0) {
-            ctx.fillStyle = "#666";
+            ctx.fillStyle = "#6B7280";
             ctx.font = "14px Arial";
             ctx.fillText("暂无可绘制数据", margin + 20, margin + 20);
             return;
@@ -112,7 +112,7 @@
 
         const yVals = plot.filter(p => p.yValue !== null).map(p => p.yValue);
         if (yVals.length === 0) {
-            ctx.fillStyle = "#666";
+            ctx.fillStyle = "#6B7280";
             ctx.font = "14px Arial";
             ctx.fillText("该条件下暂无有效数据点", margin + 20, margin + 20);
             drawXAxisLabels(ctx, plot, mode, margin, H);
@@ -148,7 +148,7 @@
             drawXAxisLabels(ctx, plot, mode, margin, H);
             drawYAxisLabels(ctx, minY, maxY, margin, H);
 
-            ctx.strokeStyle = "#000";
+            ctx.strokeStyle = "#5B7C99";
             ctx.lineWidth = 2.2;
             ctx.beginPath();
 
@@ -177,7 +177,7 @@
     }
 
     function drawAxes(ctx, margin, W, H) {
-        ctx.strokeStyle = "#000";
+        ctx.strokeStyle = "#2C3E50";
         ctx.lineWidth = 1.2;
         ctx.beginPath();
         ctx.moveTo(margin, margin);
@@ -187,7 +187,7 @@
     }
 
     function drawXAxisLabels(ctx, plot, mode, margin, H) {
-        ctx.fillStyle = "#222";
+        ctx.fillStyle = "#1C2433";
         ctx.font = "12px Arial";
         ctx.textAlign = "center";
 
@@ -195,7 +195,7 @@
             ctx.beginPath();
             ctx.moveTo(p.x, margin + H);
             ctx.lineTo(p.x, margin + H + 4);
-            ctx.strokeStyle = "#000";
+            ctx.strokeStyle = "#9CA3AF";
             ctx.lineWidth = 1;
             ctx.stroke();
 
@@ -207,7 +207,7 @@
     }
 
     function drawYAxisLabels(ctx, minY, maxY, margin, H) {
-        ctx.fillStyle = "#222";
+        ctx.fillStyle = "#1C2433";
         ctx.font = "12px Arial";
         for (let i = 0; i < 5; i++) {
             const y = margin + i * H / 4;
@@ -219,7 +219,7 @@
     function drawPoints(ctx, valid, t) {
         valid.forEach((p, i) => {
             if (t * valid.length >= i + 1) {
-                ctx.fillStyle = "red";
+                ctx.fillStyle = "#C45C4A";
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
                 ctx.fill();

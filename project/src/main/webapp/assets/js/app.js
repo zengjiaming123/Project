@@ -1,41 +1,33 @@
 const DISTRICTS_9 = ["广州", "深圳", "珠海", "佛山", "东莞", "中山", "惠州", "江门", "肇庆"];
 const DISTRICTS_8 = ["广州", "深圳", "珠海", "佛山", "东莞", "中山", "惠州", "江门"];
 
-function randomNewsItem() {
-    const year = 2024 + Math.floor(Math.random() * 2);
-    const month = 1 + Math.floor(Math.random() * 12);
-    const district = DISTRICTS_9[Math.floor(Math.random() * DISTRICTS_9.length)];
-    const yoy = (Math.random() * 8 - 2).toFixed(1);
-    const avg = (0.8 + Math.random() * 3.2).toFixed(2);
-    const rent = (0.03 + Math.random() * 0.1).toFixed(3);
-    const templates = [
-        `${district} ${year}年${month}月住宅均价约 ${avg} 万/㎡，同比${yoy >= 0 ? "上涨" : "下降"} ${Math.abs(yoy)}%`,
-        `${district} 热门板块 ${year}年${month}月成交活跃，租房参考价约 ${rent} 万/㎡/月`,
-        `大湾区 ${district} 地铁沿线房源关注度上升，建议结合【价格走势图】查看趋势`,
-        `${district} ${month}月新房与二手房价差收窄，购房者可多维度比价`,
-        `系统提示：使用【房价预测】前请先在首页选择租房或购房模式`,
-        `${district} 近地铁 1km 内房源溢价约 ${(5 + Math.random() * 8).toFixed(1)}%，刚需可关注非核心区`,
-        `${year}年${month}月 ${district} 大户型（>120㎡）均价环比${Math.random() > 0.5 ? "回升" : "微降"}`,
-        `租房市场：${district} ${month}月一居室供应增加，短租需求稳中有升`
-    ];
-    return templates[Math.floor(Math.random() * templates.length)];
+function renderNewsTicker(el, items) {
+    const joined = items.map(t => "【楼市资讯】" + t).join("    ◆    ");
+    el.innerHTML =
+        '<div class="news-track">' +
+        '<span class="news-group">' + joined + '</span>' +
+        '<span class="news-group">' + joined + '</span>' +
+        '</div>';
+    startNewsMarquee(el);
 }
 
 function setNewsTicker(containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
 
-    const items = [];
-    for (let i = 0; i < 8; i++) items.push(randomNewsItem());
-    const joined = items.map(t => "【楼市资讯】" + t).join("    ◆    ");
+    el.innerHTML = '<div class="news-track"><span class="news-group">【楼市资讯】正在加载数据库行情…</span></div>';
 
-    el.innerHTML =
-        '<div class="news-track">' +
-        '<span class="news-group">' + joined + '</span>' +
-        '<span class="news-group">' + joined + '</span>' +
-        '</div>';
-
-    startNewsMarquee(el);
+    fetch("api/news?count=8")
+        .then(resp => resp.json())
+        .then(data => {
+            const items = (data.success && data.items && data.items.length)
+                ? data.items
+                : ["资讯加载失败，请刷新页面重试"];
+            renderNewsTicker(el, items);
+        })
+        .catch(() => {
+            renderNewsTicker(el, ["资讯加载失败，请确认数据库已启动后刷新页面"]);
+        });
 }
 
 function startNewsMarquee(tickerEl) {

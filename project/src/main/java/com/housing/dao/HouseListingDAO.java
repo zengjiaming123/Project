@@ -1,6 +1,7 @@
 package com.housing.dao;
 
 import com.housing.model.HouseListing;
+import com.housing.model.MarketSnapshot;
 import com.housing.model.MarketStats;
 import com.housing.util.ListingTypeUtil;
 
@@ -93,6 +94,31 @@ public class HouseListingDAO {
             ps.setInt(2, limit);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) results.add(mapRow(rs));
+            }
+        }
+        return results;
+    }
+
+    public List<MarketSnapshot> fetchRandomMarketSnapshots(int limit) throws Exception {
+        List<MarketSnapshot> results = new ArrayList<>();
+        String sql = "SELECT district, year, month, listing_type, COUNT(*) AS cnt " +
+                "FROM house_listings WHERE area > 0 AND price > 0 " +
+                "GROUP BY district, year, month, listing_type HAVING cnt >= 3 " +
+                "ORDER BY RAND() LIMIT ?";
+
+        try (Connection conn = DBUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    MarketSnapshot snapshot = new MarketSnapshot();
+                    snapshot.setDistrict(rs.getString("district"));
+                    snapshot.setYear(rs.getInt("year"));
+                    snapshot.setMonth(rs.getInt("month"));
+                    snapshot.setListingType(rs.getString("listing_type"));
+                    snapshot.setSampleCount(rs.getInt("cnt"));
+                    results.add(snapshot);
+                }
             }
         }
         return results;

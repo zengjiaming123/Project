@@ -43,7 +43,7 @@
             </div>
             <p class="hint" id="impactHint">边际系数：每增加 1 个单位，预测总价变化多少万（正=推高，负=拉低）</p>
             <table class="impact-table" id="impactTable"></table>
-            <div style="margin-top:10px;padding:10px;border:1px dashed #a8c2f4;border-radius:10px" id="suggestion"></div>
+            <div class="suggestion-box" id="suggestion"></div>
         </div>
     </div>
 </div>
@@ -207,19 +207,19 @@
         const { title } = panel;
 
         ctx.clearRect(0, 0, logicalW, logicalH);
-        ctx.fillStyle = "#fafcff";
+        ctx.fillStyle = "#F8F9FB";
         ctx.fillRect(0, 0, logicalW, logicalH);
 
-        ctx.strokeStyle = "#8fa8d8";
+        ctx.strokeStyle = "#D4DCE4";
         ctx.lineWidth = 1.5;
         ctx.strokeRect(4, 4, logicalW - 8, logicalH - 8);
 
-        ctx.fillStyle = "#1e293b";
+        ctx.fillStyle = "#1C2433";
         ctx.font = "600 12px 'Segoe UI', 'Microsoft YaHei', sans-serif";
         ctx.fillText(title, 12, 20);
 
         if (panel.empty) {
-            ctx.fillStyle = "#94a3b8";
+            ctx.fillStyle = "#6B7280";
             ctx.font = "12px 'Segoe UI', 'Microsoft YaHei', sans-serif";
             ctx.fillText("暂无样本", 16, 48);
             return;
@@ -231,7 +231,7 @@
         const axisEase = easeOutCubic(axisP);
         const contentEase = easeOutCubic(contentP);
 
-        ctx.strokeStyle = "#e2e8f4";
+        ctx.strokeStyle = "#E2E6EC";
         ctx.lineWidth = 1;
         const gridN = 4;
         for (let i = 1; i <= gridN; i++) {
@@ -247,7 +247,7 @@
             ctx.stroke();
         }
 
-        ctx.strokeStyle = "#334155";
+        ctx.strokeStyle = "#2C3E50";
         ctx.lineWidth = 2;
         ctx.lineCap = "round";
         ctx.beginPath();
@@ -260,7 +260,7 @@
         ctx.stroke();
 
         if (axisP >= 1) {
-            ctx.fillStyle = "#64748b";
+            ctx.fillStyle = "#6B7280";
             ctx.font = "11px 'Segoe UI', 'Microsoft YaHei', sans-serif";
             ctx.fillText(xLabel, (plot.left + plot.right) / 2 - 24, plot.bottom + 24);
             ctx.save();
@@ -279,7 +279,7 @@
             for (let i = 0; i < points.length; i++) {
                 const pt = points[i];
                 const r = 3.5 + 1.0 * contentEase;
-                ctx.fillStyle = `rgba(220, 38, 38, ${alpha})`;
+                ctx.fillStyle = `rgba(196, 92, 74, ${alpha})`;
                 ctx.strokeStyle = "#ffffff";
                 ctx.lineWidth = 1.2;
                 ctx.beginPath();
@@ -290,7 +290,7 @@
         }
 
         if (panel.sampleCount > 0 && axisP >= 1) {
-            ctx.fillStyle = "#64748b";
+            ctx.fillStyle = "#6B7280";
             ctx.font = "10px 'Segoe UI', 'Microsoft YaHei', sans-serif";
             ctx.fillText("散点" + panel.sampleCount + "个", 12, logicalH - 8);
         }
@@ -299,7 +299,7 @@
             const lineEase = contentEase;
             const segCount = line.length - 1;
             let remain = lineEase * segCount;
-            ctx.strokeStyle = "#1d4ed8";
+            ctx.strokeStyle = "#5B7C99";
             ctx.lineWidth = 3;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
@@ -316,10 +316,10 @@
             ctx.stroke();
 
             if (contentEase >= 0.95) {
-                ctx.fillStyle = "#1d4ed8";
+                ctx.fillStyle = "#5B7C99";
                 ctx.font = "10px 'Segoe UI', 'Microsoft YaHei', sans-serif";
                 ctx.fillRect(logicalW - 72, 10, 64, 16);
-                ctx.fillStyle = "#ffffff";
+                ctx.fillStyle = "#FFFFFF";
                 ctx.fillText("— 拟合线", logicalW - 68, 21);
             }
         }
